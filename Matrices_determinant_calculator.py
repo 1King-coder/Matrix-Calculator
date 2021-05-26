@@ -1,5 +1,6 @@
 class Matrix:
-    def __init__(self, matrix):
+    def __init__(self, matrix, identification='A'):
+        self.identification = identification
         self.matrix = matrix
         self.determinant = self.det(self.matrix)
 
@@ -18,16 +19,26 @@ class Matrix:
         for i in range(len(self.matrix)):
             length = len(self.matrix)**0.5
 
+            if length <= 1:
+                print(
+                    f'{self.identification} = |{self.matrix[i]}|')
+                break
+
             if i % length == 0:
-                print(f'|{self.matrix[i]:2}', end=' ')
+                if i == length:
+                    print(
+                        f'{self.identification} = |{self.matrix[i]:3}',
+                        end=' ')
+                    continue
+                print(f'    |{self.matrix[i]:3}', end=' ')
                 continue
 
             if (i+1) % length == 0:
-                print(f'{self.matrix[i]:2}|', end=' ')
+                print(f'{self.matrix[i]:3}|', end=' ')
                 print()
                 continue
 
-            print(f'{self.matrix[i]:2}', end=' ')
+            print(f'{self.matrix[i]:3}', end=' ')
 
     @staticmethod
     def det_2x2(A: list) -> int:
@@ -130,6 +141,9 @@ class Matrix:
         size = len(A)
         length = int(size**0.5)
 
+        if size <= 1:
+            return A[0]
+
         if size <= 4:
             return Matrix.det_2x2(A)
 
@@ -146,25 +160,11 @@ if __name__ == '__main__':
         matrix = []
 
         for _ in range(size**2):
-            matrix.append(randint(1, 100))
+            matrix.append(randint(0, 200))
 
         return matrix
 
-    A = random_matrix(7)
-
-    for i in range(len(A)):
-        length = len(A)**0.5
-
-        if i % length == 0:
-            print(f'{A[i]:3}', end=' ')
-            continue
-
-        if (i+1) % length == 0:
-            print(f'{A[i]:3}', end=' ')
-            print()
-            continue
-
-        print(f'{A[i]:3}', end=' ')
+    A = random_matrix(5)
 
     print()
 
@@ -174,4 +174,4 @@ if __name__ == '__main__':
 
     print()
 
-    print(f'Det(matrix) = {matrix.determinant}')
+    print(f'Det({matrix.identification}) = {matrix.determinant}')
