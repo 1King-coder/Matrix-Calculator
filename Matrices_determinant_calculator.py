@@ -9,26 +9,25 @@ class Matrix:
     to the matrix.
     """
 
-    @staticmethod
-    def show_matrix(A: list) -> None:
+    def show_matrix(self) -> None:
         """
         Print the list as
         a matrix.
         """
 
-        for i in range(len(A)):
-            length = len(A)**0.5
+        for i in range(len(self.matrix)):
+            length = len(self.matrix)**0.5
 
             if i % length == 0:
-                print(f'|{A[i]:2}', end=' ')
+                print(f'|{self.matrix[i]:2}', end=' ')
                 continue
 
             if (i+1) % length == 0:
-                print(f'{A[i]:2}|', end=' ')
+                print(f'{self.matrix[i]:2}|', end=' ')
                 print()
                 continue
 
-            print(f'{A[i]:2}', end=' ')
+            print(f'{self.matrix[i]:2}', end=' ')
 
     @staticmethod
     def det_2x2(A: list) -> int:
@@ -141,12 +140,38 @@ class Matrix:
 
 
 if __name__ == '__main__':
-    A = [11, 92, 80, 15, 1,
-         61, 52, 71, 47, 2,
-         64, 42, 17, 85, 3,
-         53, 75, 63, 93, 4,
-         5,   6,  7,  8, 9]
+    from random import randint
+
+    def random_matrix(size):
+        matrix = []
+
+        for _ in range(size**2):
+            matrix.append(randint(1, 100))
+
+        return matrix
+
+    A = random_matrix(7)
+
+    for i in range(len(A)):
+        length = len(A)**0.5
+
+        if i % length == 0:
+            print(f'{A[i]:3}', end=' ')
+            continue
+
+        if (i+1) % length == 0:
+            print(f'{A[i]:3}', end=' ')
+            print()
+            continue
+
+        print(f'{A[i]:3}', end=' ')
+
+    print()
 
     matrix = Matrix(A)
 
-    print(matrix.determinant)
+    matrix.show_matrix()
+
+    print()
+
+    print(f'Det(matrix) = {matrix.determinant}')
