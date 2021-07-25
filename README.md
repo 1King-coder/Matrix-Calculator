@@ -6,7 +6,7 @@
 
   Remake of Matrix Determinant Calculator.<br>
   Now it can make every Matrix operation, even <br>
-  calculate it's determinant. Faster and stronger =).
+  calculate it's determinant. Faster and stronger.
     
     
   
