@@ -147,9 +147,7 @@ class Matrix:
         
         return Matrix.mul_matrix_by_number(matrix_1, param)
 
-
     # Need revision
-    
     def __truediv__(self, param):
         """
         Allow to divide Matrices or
@@ -181,7 +179,7 @@ class Matrix:
         def multply_matrices (i, j, num = 0):
             for k in range(matrix_1.cols_num):
                 num += matrix_1.matrix[i][k] * matrix_2.matrix[k][j]
-            return round(num, 2)
+            return num
         
         return Matrix.map_matrix(
             multply_matrices,
@@ -219,7 +217,7 @@ class Matrix:
         """
         
         return Matrix.map_matrix(
-            lambda i, j: round(matrix.matrix[i][j] / num, 2),
+            lambda i, j: matrix.matrix[i][j] / num,
             matrix.rows_num,
             matrix.cols_num
         )
@@ -338,10 +336,10 @@ class Determinant:
 if __name__ == "__main__":
     """
     Some tests...
-    """
+    
     A = Matrix([
-        [1,	 2, 3, 2],
-        [5,	 6, 4, 4],
+        [1, 2, 3, 2],
+        [5,	6, 4, 4],
         [7, 8, 11, 5],
         [12, 13, 14, 15],
     ])
@@ -364,3 +362,4 @@ if __name__ == "__main__":
     print(Matrix.invert(A))
 
     print(D * ((A + C) * 2) - D * 10)
+    """  
