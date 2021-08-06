@@ -1,5 +1,6 @@
 from random import randint
 from typing import Union
+from math import ceil
 
 """
 In this module i aimed to
@@ -44,7 +45,7 @@ class Matrix:
         return len(matrix) == len(matrix[0])
 
     @staticmethod
-    def map_matrix(func, rows: int, cols: int) -> 'Matrix':
+    def map_matrix(func, rows_num: int, cols_num: int) -> 'Matrix':
         """
         Receive a function and return
         a new result Matrix.
@@ -52,13 +53,13 @@ class Matrix:
 
         new_matrix: list = []
         
-        for i in range(rows):
+        for i in range(rows_num):
             new_matrix.append([])
 
-            for j in range(cols):
+            for j in range(cols_num):
                 new_matrix[i].append(func(i, j))
 
-        new_matrix = list(filter(lambda x: x != [], new_matrix))
+        # new_matrix = list(filter(lambda x: x != [], new_matrix))
 
         return Matrix(new_matrix)
     
@@ -74,7 +75,7 @@ class Matrix:
             rows, 
             columns
         )
-        
+
     def __str__(self) -> str:
         """
         Pretty print a Matrix.
@@ -179,7 +180,7 @@ class Matrix:
         def multply_matrices (i, j, num = 0):
             for k in range(matrix_1.cols_num):
                 num += matrix_1.matrix[i][k] * matrix_2.matrix[k][j]
-            return num
+            return round(num)
         
         return Matrix.map_matrix(
             multply_matrices,
@@ -210,6 +211,7 @@ class Matrix:
             matrix.cols_num
         )
     
+    
     @staticmethod
     def div_matrix_by_number(matrix: 'Matrix', num: Union[int, float]) -> 'Matrix':
         """
@@ -217,10 +219,11 @@ class Matrix:
         """
         
         return Matrix.map_matrix(
-            lambda i, j: matrix.matrix[i][j] / num,
+            lambda i, j: round(matrix.matrix[i][j] / num, 3),
             matrix.rows_num,
             matrix.cols_num
         )
+    
 
     @staticmethod
     def transpose(matrix: 'Matrix') -> 'Matrix':
@@ -239,30 +242,47 @@ class Matrix:
         return Matrix(list(map(list, zip(*matrix.matrix))))
 
     @staticmethod
+    def minor_coplementary (matrix: list, i: int, j: int) -> Union[int, float]:
+        minor_comp = [row[:j] + row[j+1:] for row in (matrix[:i]+matrix[i+1:])]
+
+        return Matrix(minor_comp).det
+
+    @staticmethod
+    def cofactor (matrix: list, row: int, col: int()) -> Union[int, float]:
+        cofactor = matrix[row][col] * Matrix.minor_coplementary(matrix, row, col) * (-1)**((row+1) + (col+1))
+
+        return cofactor    
+
+    @staticmethod
     def invert(matrix: 'Matrix') -> 'Matrix':
         """
         Verify if the Matrix is invertible
         and if it is, invert it.
         """
-
         det = matrix.det
+
+        # Base for 2x2 matrices
+
+        if matrix.size == '2x2':
+            return Matrix([
+                [(matrix.matrix[1][1]/det), (-matrix.matrix[0][1]/det)],
+                [(-matrix.matrix[1][0]/det), (matrix.matrix[0][0]/det)]
+            ])
 
         if det != 0:
 
             minors_matrix = Matrix.map_matrix(
-                lambda i, j: Determinant.minor_coplementary(matrix.matrix, i, j), 
+                lambda i, j: Matrix.minor_coplementary(matrix.matrix, i, j), 
                 matrix.rows_num, 
                 matrix.cols_num
             )
 
             minors_matrix = Matrix.transpose(minors_matrix)
-            minors_matrix /= det
+            inverted_matrix = minors_matrix / det
             
-            return minors_matrix
+            return inverted_matrix
 
         raise TypeError('Matrix not invertible.')
-        
-
         
 
 class Determinant:
@@ -315,25 +335,15 @@ class Determinant:
     @staticmethod
     def detNxN (matrix: list, det: int = 0) -> Union[int, float]:
         for j in range(len(matrix[0])):
-            det += Determinant.cofactor(matrix, 0, j)
+            det += Matrix.cofactor(matrix, 0, j)
         
         return det
 
-    @staticmethod
-    def minor_coplementary (matrix: list, i: int, j: int) -> Union[int, float]:
-        minor_comp = [row[:j] + row[j+1:] for row in (matrix[:i]+matrix[i+1:])]
-
-        return Matrix(minor_comp).det
-
-    @staticmethod
-    def cofactor (matrix: list, row: int, col: int()) -> Union[int, float]:
-        cofactor = matrix[row][col] * Determinant.minor_coplementary(matrix, row, col) * (-1)**((row+1) + (col+1))
-
-        return cofactor
-
+    
 
         
 if __name__ == "__main__":
+    import numpy as np
     """
     Some tests...
     
@@ -362,4 +372,15 @@ if __name__ == "__main__":
     print(Matrix.invert(A))
 
     print(D * ((A + C) * 2) - D * 10)
-    """  
+    """ 
+    
+    A = Matrix([
+        [1, 2, 3, 2],
+        [5,	6, 4, 4],
+        [7, 8, 11, 5],
+        [12, 13, 14, 15],
+    ])
+    
+    print(Matrix.invert(A))
+    
+    
