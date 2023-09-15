@@ -1,7 +1,8 @@
 from random import randint
 from typing import Union
 from math import ceil
-
+from Vectors import Vector
+from copy import deepcopy
 """
 In this module i aimed to
 create some Matrix calculations
@@ -25,16 +26,25 @@ class Matrix:
         in a tuple (rows, columns).
         """
 
-        if type(arg) == list:
-            self.matrix: list = arg
-
-        if type(arg) == tuple:
-            self.matrix: list = Matrix.gen_matrix(arg[0], arg[1]).matrix
-
+        self.matrix: list = arg
         self.rows_num: int = len(self.matrix)
         self.cols_num: int = len(self.matrix[0])
 
         self.size: str = f'{self.rows_num}x{self.cols_num}'
+
+    @property
+    def matrix (self) -> list:
+        return self.__matrix
+    
+    @matrix.setter
+    def matrix (self, arg):
+        if isinstance(arg, list):
+            self.__matrix: list = arg
+            return
+
+        self.__matrix: list = Matrix.gen_matrix(arg[0], arg[1]).matrix
+
+
 
     @property
     def det (self) -> Union[int, float]:
@@ -76,7 +86,7 @@ class Matrix:
             columns
         )
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """
         Pretty print a Matrix.
         """
@@ -177,13 +187,13 @@ class Matrix:
         Multiply a Matrix by other.
         """
 
-        def multply_matrices (i, j, num = 0):
+        def multiply_matrices (i, j, num = 0):
             for k in range(matrix_1.cols_num):
                 num += matrix_1.matrix[i][k] * matrix_2.matrix[k][j]
             return round(num)
         
         return Matrix.map_matrix(
-            multply_matrices,
+            multiply_matrices,
             matrix_1.rows_num,
             matrix_2.cols_num
         )
@@ -251,7 +261,42 @@ class Matrix:
     def cofactor (matrix: list, row: int, col: int()) -> Union[int, float]:
         cofactor = matrix[row][col] * Matrix.minor_coplementary(matrix, row, col) * (-1)**((row+1) + (col+1))
 
-        return cofactor    
+        return cofactor
+
+    @staticmethod
+    def order_lines (matrix: list, to_order_matrices: list = [] , index: int = 0):
+        sorted_matrix = sorted(
+            deepcopy(matrix[index:]),
+            key = lambda element: abs(element[index]),
+            reverse=True
+        )
+
+        to_order_matrices.append(matrix)
+        max_module_index = matrix.index(sorted_matrix[0])
+
+        for to_order in to_order_matrices:
+            to_order[index], to_order[max_module_index] = to_order[max_module_index], to_order[index]
+        
+        to_order_matrices = []
+        print(Matrix(matrix))
+
+    @staticmethod
+    def gaussian_elimination (matrix: 'Matrix') -> 'Matrix':
+        escalonated_matrix = deepcopy(matrix.matrix)
+        
+        for i in range(matrix.rows_num):
+            Matrix.order_lines(escalonated_matrix, [], i)
+
+            for j in range(i + 1, matrix.cols_num):
+
+                multiplier = escalonated_matrix[j][i]/escalonated_matrix[i][i]
+                escalonated_matrix[j] = [
+                    escalonated_matrix[j][k] - escalonated_matrix[i][k]*multiplier
+                    for k in range(matrix.rows_num)
+                ]
+
+        return Matrix(escalonated_matrix) 
+                
 
     @staticmethod
     def invert(matrix: 'Matrix') -> 'Matrix':
@@ -333,17 +378,21 @@ class Determinant:
         return part_1 - part_2
     
     @staticmethod
-    def detNxN (matrix: list, det: int = 0) -> Union[int, float]:
-        for j in range(len(matrix[0])):
-            det += Matrix.cofactor(matrix, 0, j)
-        
+    def detNxN (matrix: list, det: int = 1) -> Union[int, float]:
+        """
+        Create P.A = L.U fatoration and solve determinant signal problem
+        """
+
+        triangular_matrix = Matrix.gaussian_elimination(Matrix(matrix))
+        for i in range(triangular_matrix.rows_num):
+            det *= triangular_matrix.matrix[i][i]
+
         return det
 
     
 
         
 if __name__ == "__main__":
-    import numpy as np
     """
     Some tests...
     
@@ -375,12 +424,12 @@ if __name__ == "__main__":
     """ 
     
     A = Matrix([
-        [1, 2, 3, 2],
-        [5,	6, 4, 4],
-        [7, 8, 11, 5],
-        [12, 13, 14, 15],
+        [2, 1, 1, 0],
+        [4, 3, 3, 1],
+        [8, 7, 9, 5],
+        [6, 7, 9, 8],
     ])
     
-    print(Matrix.invert(A))
+    print(A.det)
     
     
