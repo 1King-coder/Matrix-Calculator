@@ -1,8 +1,7 @@
 from random import randint
 from typing import Union
-from math import ceil
-from Vectors import Vector
 from copy import deepcopy
+import sympy as sym
 """
 In this module i aimed to
 create some Matrix calculations
@@ -29,8 +28,11 @@ class Matrix:
         self.matrix: list = arg
         self.rows_num: int = len(self.matrix)
         self.cols_num: int = len(self.matrix[0])
-
+        self.num_of_changed_lines = 0
         self.P_factor = []
+        self.L_factor = []
+        self.A_factor = deepcopy(self.matrix)
+        self.U_factor = self.gaussian_elimination(self.matrix)
 
         self.size: str = f'{self.rows_num}x{self.cols_num}'
 
@@ -58,14 +60,50 @@ class Matrix:
             return
         
         self.__P_factor = value
-        
+    
+
+    @property
+    def A_factor (self):
+        return self.__A_factor
+    
+    @A_factor.setter
+    def A_factor (self, value: list) -> None:        
+        self.__A_factor = value
+
+    @property
+    def L_factor (self):
+        return self.__L_factor
+    
+    @L_factor.setter
+    def L_factor (self, value: list) -> None:
+        if isinstance(value, Matrix):
+            self.__L_factor = value
+            return
+
+        if not value:
+            value = Matrix.map_matrix(lambda i, j: 0, self.rows_num, self.cols_num)
+
+        if value[self.rows_num - 1][self.cols_num-2]:
+            for i in range(self.rows_num):
+                value[i][i] = 1
+
+        self.__L_factor = value
+
     @property
     def U_factor (self):
         return self.__U_factor
     
     @U_factor.setter
-    def U_factor (self, value: list):
-        self.U_factor = value
+    def U_factor (self, value):
+        self.__U_factor = value
+
+    @property
+    def num_of_changed_lines (self):
+        return self.__num_of_changed_lines
+    
+    @num_of_changed_lines.setter
+    def num_of_changed_lines (self, value):
+        self.__num_of_changed_lines = value
 
     @property
     def det (self) -> Union[int, float]:
@@ -76,7 +114,7 @@ class Matrix:
         return len(matrix) == len(matrix[0])
 
     @staticmethod
-    def map_matrix(func, rows_num: int, cols_num: int) -> 'Matrix':
+    def map_matrix(func, rows_num: int, cols_num: int) -> list:
         """
         Receive a function and return
         a new result Matrix.
@@ -92,7 +130,7 @@ class Matrix:
 
         # new_matrix = list(filter(lambda x: x != [], new_matrix))
 
-        return Matrix(new_matrix)
+        return new_matrix
     
     @staticmethod
     def gen_matrix(rows: int, columns: int, identity: bool = False) -> list:
@@ -107,12 +145,11 @@ class Matrix:
         if identity:
             gen_matrix_function = lambda i, j: 1 if i == j else 0
 
-        generated_matrix = []
-
-        for i in range (rows):
-            generated_matrix.append([gen_matrix_function(i, j) for j in range(columns)])
-
-        return generated_matrix
+        return Matrix.map_matrix(
+            gen_matrix_function,
+            rows,
+            columns
+        )
 
     def __repr__(self) -> str:
         """
@@ -127,10 +164,10 @@ class Matrix:
 
             for j in range(self.cols_num):
                 if j == self.cols_num-1:
-                    matrix_str += f'{self.matrix[i][j]:3}'
+                    matrix_str += f'{str(self.matrix[i][j])}'
                     continue
 
-                matrix_str += f'{self.matrix[i][j]:3} '
+                matrix_str += f'{str(self.matrix[i][j])} '
             matrix_str += '|\n'
 
         return matrix_str
@@ -177,7 +214,7 @@ class Matrix:
 
         matrix_1 = Matrix(self.matrix)
         
-        if type(param) == Matrix:
+        if isinstance(param, Matrix):
 
             if self.cols_num != param.rows_num:
                 raise IndexError("The number of columns of a matrix must be equal to the other's number of rows.")
@@ -220,11 +257,11 @@ class Matrix:
                 num += matrix_1.matrix[i][k] * matrix_2.matrix[k][j]
             return round(num)
         
-        return Matrix.map_matrix(
+        return Matrix(Matrix.map_matrix(
             multiply_matrices,
             matrix_1.rows_num,
             matrix_2.cols_num
-        )
+        ))
 
     # Need revision
     """
@@ -243,11 +280,11 @@ class Matrix:
         Multiply a Matrix by a real number.
         """
         
-        return Matrix.map_matrix(
+        return Matrix(Matrix.map_matrix(
             lambda i, j: matrix.matrix[i][j] * num,
             matrix.rows_num,
             matrix.cols_num
-        )
+        ))
     
     
     @staticmethod
@@ -256,11 +293,11 @@ class Matrix:
         Divide a Matrix by a real number.
         """
         
-        return Matrix.map_matrix(
-            lambda i, j: round(matrix.matrix[i][j] / num, 3),
+        return Matrix(Matrix.map_matrix(
+            lambda i, j: sym.Rational(matrix.matrix[i][j], num),
             matrix.rows_num,
             matrix.cols_num
-        )
+        ))
     
 
     @staticmethod
@@ -291,42 +328,50 @@ class Matrix:
 
         return cofactor
 
-    @staticmethod
-    def order_lines (matrix: list, to_order_matrices: list = [] , index: int = 0):
+    def order_lines (self, matrix: list, to_order_matrices: list = [] , index: int = 0):
+        to_be_sorted = deepcopy(matrix)[index:]
         sorted_matrix = sorted(
-            deepcopy(matrix[index:]),
+            to_be_sorted,
             key = lambda element: abs(element[index]),
             reverse=True
         )
-
+        if not sorted_matrix:
+            return matrix
+        
         to_order_matrices.append(matrix)
         max_module_index = matrix.index(sorted_matrix[0])
+
+        if max_module_index != 0:
+            self.num_of_changed_lines += 1
 
         for to_order in to_order_matrices:
             to_order[index], to_order[max_module_index] = to_order[max_module_index], to_order[index]
 
-    @staticmethod
-    def gaussian_elimination (matrix: 'Matrix') -> 'Matrix':
+    def gaussian_elimination (self, matrix: list) -> list:
         """
         Utilizes gaussian elimination method to partialy escalonate a
         given matrix.
         returns the partialy escalonated matrix (triangular matrix).
         """
 
-        escalonated_matrix = deepcopy(matrix.matrix)
+        escalonated_matrix = deepcopy(matrix)
+        rows_num = len(matrix)
+        cols_num = len(matrix[0])
         
-        for i in range(matrix.rows_num):
-            Matrix.order_lines(escalonated_matrix, [], i)
+        for i in range(cols_num):
+            self.order_lines(escalonated_matrix, [self.P_factor, self.A_factor, self.L_factor], i)
 
-            for j in range(i + 1, matrix.cols_num):
-
-                multiplier = escalonated_matrix[j][i]/escalonated_matrix[i][i]
+            for j in range(i + 1, rows_num):
+                multiplier = sym.Rational(escalonated_matrix[j][i], escalonated_matrix[i][i])
                 escalonated_matrix[j] = [
                     escalonated_matrix[j][k] - escalonated_matrix[i][k]*multiplier
-                    for k in range(matrix.rows_num)
+                    for k in range(cols_num)
                 ]
+                self.L_factor[j][i] = multiplier            
 
-        return Matrix(escalonated_matrix)
+        self.L_factor = self.L_factor # To ensure there is the 1's in de main diagonal
+        
+        return escalonated_matrix
                 
 
     @staticmethod
@@ -413,12 +458,13 @@ class Determinant:
         """
         Create P.A = L.U fatoration and solve determinant signal problem
         """
+        matrix = Matrix(matrix)
+        triangular_matrix = matrix.gaussian_elimination(matrix.matrix)
+        
+        for i in range(len(triangular_matrix)):
+            det *= triangular_matrix[i][i]
 
-        triangular_matrix = Matrix.gaussian_elimination(Matrix(matrix))
-        for i in range(triangular_matrix.rows_num):
-            det *= triangular_matrix.matrix[i][i]
-
-        return det
+        return det * (-1)**matrix.num_of_changed_lines
 
     
 
@@ -461,11 +507,18 @@ if __name__ == "__main__":
         [6, 7, 9, 8],
     ]
 
+    matrix_b = [
+        [-3, 1, 1, 2, 4],
+        [2, 3, 1, -4, 0],
+        [-1, 0, 1, -1, 2],
+        [1, 1, -3, 0, -2],
+    ]
+
 
     A = Matrix(matrix_a)
-    B = Matrix(matrix_a)
-    
-    print(Matrix.invert(A))
+
+
+    print(Matrix(A.L_factor))
     
     
     
