@@ -30,6 +30,8 @@ class Matrix:
         self.rows_num: int = len(self.matrix)
         self.cols_num: int = len(self.matrix[0])
 
+        self.P_factor = []
+
         self.size: str = f'{self.rows_num}x{self.cols_num}'
 
     @property
@@ -44,7 +46,26 @@ class Matrix:
 
         self.__matrix: list = Matrix.gen_matrix(arg[0], arg[1]).matrix
 
+    @property
+    def P_factor (self):
+        return self.__P_factor
+    
+    @P_factor.setter
+    def P_factor (self, value: list) -> None:
 
+        if not value:
+            self.__P_factor = Matrix.gen_matrix(self.rows_num, self.cols_num, True)
+            return
+        
+        self.__P_factor = value
+        
+    @property
+    def U_factor (self):
+        return self.__U_factor
+    
+    @U_factor.setter
+    def U_factor (self, value: list):
+        self.U_factor = value
 
     @property
     def det (self) -> Union[int, float]:
@@ -74,17 +95,24 @@ class Matrix:
         return Matrix(new_matrix)
     
     @staticmethod
-    def gen_matrix(rows: int, columns: int) -> list:
+    def gen_matrix(rows: int, columns: int, identity: bool = False) -> list:
         """
         Generate a matrix with
         the sent size and random numbers
         between 0 and 100.
+        receives a identity boolean, if it's True, gens a identity matrix.
         """
-        return Matrix.map_matrix(
-            lambda i, j: randint(0, 100), 
-            rows, 
-            columns
-        )
+        gen_matrix_function = lambda i, j: randint(0, 100)
+
+        if identity:
+            gen_matrix_function = lambda i, j: 1 if i == j else 0
+
+        generated_matrix = []
+
+        for i in range (rows):
+            generated_matrix.append([gen_matrix_function(i, j) for j in range(columns)])
+
+        return generated_matrix
 
     def __repr__(self) -> str:
         """
@@ -276,12 +304,15 @@ class Matrix:
 
         for to_order in to_order_matrices:
             to_order[index], to_order[max_module_index] = to_order[max_module_index], to_order[index]
-        
-        to_order_matrices = []
-        print(Matrix(matrix))
 
     @staticmethod
     def gaussian_elimination (matrix: 'Matrix') -> 'Matrix':
+        """
+        Utilizes gaussian elimination method to partialy escalonate a
+        given matrix.
+        returns the partialy escalonated matrix (triangular matrix).
+        """
+
         escalonated_matrix = deepcopy(matrix.matrix)
         
         for i in range(matrix.rows_num):
@@ -295,7 +326,7 @@ class Matrix:
                     for k in range(matrix.rows_num)
                 ]
 
-        return Matrix(escalonated_matrix) 
+        return Matrix(escalonated_matrix)
                 
 
     @staticmethod
@@ -422,14 +453,19 @@ if __name__ == "__main__":
 
     print(D * ((A + C) * 2) - D * 10)
     """ 
-    
-    A = Matrix([
+
+    matrix_a = [
         [2, 1, 1, 0],
         [4, 3, 3, 1],
         [8, 7, 9, 5],
         [6, 7, 9, 8],
-    ])
+    ]
+
+
+    A = Matrix(matrix_a)
+    B = Matrix(matrix_a)
     
-    print(A.det)
+    print(Matrix.invert(A))
+    
     
     
